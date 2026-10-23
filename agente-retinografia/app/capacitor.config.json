@@ -1,0 +1,6 @@
+{
+  "appId": "br.eyeflow.agenteretinografia",
+  "appName": "Agente de Retinografia",
+  "webDir": "www",
+  "android": { "backgroundColor": "#eef3f6" }
+}

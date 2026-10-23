@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d5563">
+<meta name="description" content="Laudo preliminar de retinografia para triagem de glaucoma (EyeFlow V800)">
+<title>Agente de Retinografia</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Agente Retino">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="ag-app">
+  <header class="ag-top ag-noprint">
+    <img src="icons/icon-192.png" alt="" class="ag-logo">
+    <div><div class="ag-title">Agente de Retinografia</div><div class="ag-sub">Laudo preliminar · triagem de glaucoma</div></div>
+    <button class="ag-status" id="status" type="button" title="Estado do servidor"><i></i><span>verificando…</span></button>
+  </header>
+
+  <main>
+    <!-- ================= NOVA ANÁLISE ================= -->
+    <section class="ag-view" id="v-nova">
+      <div class="ag-card">
+        <h2 class="ag-h">1. Retinografia</h2>
+        <div class="ag-drop" id="drop">
+          <img id="preview" alt="Pré-visualização da retinografia" hidden>
+          <div class="ag-drop-empty" id="drop-empty">
+            <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="15.5" cy="11" r="2.4" fill="currentColor" opacity=".55"/><path d="M5 13c2-1 4-1 6 0M6 9c2 .5 3.5 0 5-1" stroke="currentColor" stroke-width="1.2" fill="none" opacity=".6"/></svg>
+            <p>Fotografe ou escolha uma retinografia colorida<br><small>JPG, PNG ou TIF · centrada na mácula ou no disco</small></p>
+          </div>
+        </div>
+        <div class="ag-row">
+          <label class="ag-btn ag-btn-sec"><input type="file" accept="image/*" capture="environment" id="in-camera" hidden>📷 Câmera</label>
+          <label class="ag-btn ag-btn-sec"><input type="file" accept="image/*,.tif,.tiff" id="in-galeria" hidden>🖼️ Galeria / arquivos</label>
+        </div>
+        <p class="ag-hint" id="img-info"></p>
+      </div>
+
+      <div class="ag-card">
+        <h2 class="ag-h">2. Dados do exame <small>(opcionais)</small></h2>
+        <label class="ag-field"><span>Paciente (iniciais ou prontuário)</span>
+          <input id="paciente" maxlength="80" autocomplete="off" placeholder="Ex.: J.S. · 12345"></label>
+        <div class="ag-field"><span>Olho</span>
+          <div class="ag-seg" role="radiogroup" id="olho">
+            <button type="button" data-v="" aria-pressed="true">Estimar</button>
+            <button type="button" data-v="OD" aria-pressed="false">OD (direito)</button>
+            <button type="button" data-v="OE" aria-pressed="false">OE (esquerdo)</button>
+          </div>
+          <small class="ag-hint">Sem informar, o olho é estimado pela posição do disco (falha em fotos centradas no disco).</small>
+        </div>
+        <div class="ag-field"><span>Análise</span>
+          <div class="ag-seg" role="radiogroup" id="modo">
+            <button type="button" data-v="completo" aria-pressed="true">Completa<small>RETFound + MedGemma · 1–2 min</small></button>
+            <button type="button" data-v="rapido" aria-pressed="false">Rápida<small>só Stage 1 · segundos</small></button>
+          </div>
+        </div>
+      </div>
+
+      <button class="ag-btn ag-btn-pri ag-big" id="btn-gerar" type="button" disabled>Gerar laudo preliminar</button>
+      <button class="ag-link" id="btn-exemplo" type="button">Ver um laudo de exemplo (resultado real do notebook)</button>
+      <p class="ag-aviso">Ferramenta de pesquisa, sem validação clínica nem registro na ANVISA. O laudo é preliminar e precisa ser revisado por médico oftalmologista.</p>
+    </section>
+
+    <!-- ================= PROGRESSO ================= -->
+    <section class="ag-view" id="v-prog" hidden>
+      <div class="ag-card ag-prog">
+        <div class="ag-spin" aria-hidden="true"></div>
+        <h2 class="ag-h" id="prog-titulo">Analisando a retinografia…</h2>
+        <p id="prog-etapa" class="ag-etapa">Enviando a imagem</p>
+        <p class="ag-timer" id="prog-tempo">0 s</p>
+        <ol class="ag-steps" id="prog-passos">
+          <li data-k="Envi">Envio da imagem</li>
+          <li data-k="Stage 1">Stage 1 · evidências estruturais (RETFound)</li>
+          <li data-k="Stage 2" class="s2">Stage 2 · raciocínio em 6 passos (MedGemma)</li>
+          <li data-k="Tradu" class="s2">Tradução para o português</li>
+          <li data-k="Mont">Montagem do laudo</li>
+        </ol>
+        <button class="ag-btn ag-btn-sec" id="btn-cancelar" type="button">Cancelar</button>
+      </div>
+    </section>
+
+    <!-- ================= LAUDO ================= -->
+    <section class="ag-view ag-view-laudo" id="v-laudo" hidden>
+      <div class="ag-toolbar ag-noprint">
+        <button class="ag-btn ag-btn-sec" id="btn-voltar" type="button">← Voltar</button>
+        <button class="ag-btn ag-btn-sec" id="btn-share" type="button">Compartilhar</button>
+        <button class="ag-btn ag-btn-sec" id="btn-print" type="button">PDF / Imprimir</button>
+      </div>
+      <div class="ag-exemplo ag-noprint" id="faixa-exemplo" hidden>Exemplo: laudo real gerado pelo notebook para <b>paciente001_OD.jpg</b>.</div>
+      <div id="laudo"></div>
+    </section>
+
+    <!-- ================= HISTÓRICO ================= -->
+    <section class="ag-view" id="v-hist" hidden>
+      <div class="ag-card">
+        <h2 class="ag-h">Laudos salvos neste aparelho</h2>
+        <p class="ag-hint">Ficam apenas no celular (nada é guardado no servidor). Até 50 laudos.</p>
+        <ul class="ag-list" id="lista"></ul>
+      </div>
+    </section>
+
+    <!-- ================= AJUSTES ================= -->
+    <section class="ag-view" id="v-ajustes" hidden>
+      <div class="ag-card">
+        <h2 class="ag-h">Servidor de inferência</h2>
+        <p class="ag-hint">Endereço exibido pelo notebook <b>Iniciar_Servidor_Colab</b> (ex.: https://xxxx.trycloudflare.com).</p>
+        <label class="ag-field"><span>Endereço do servidor</span>
+          <input id="cfg-url" type="url" inputmode="url" autocomplete="off" placeholder="https://…"></label>
+        <label class="ag-field"><span>Chave de acesso</span>
+          <input id="cfg-chave" type="password" autocomplete="off" placeholder="AGENTE_CHAVE do servidor"></label>
+        <label class="ag-field"><span>Instituição (cabeçalho do laudo)</span>
+          <input id="cfg-inst" maxlength="120"></label>
+        <label class="ag-check"><input type="checkbox" id="cfg-orig"> Incluir o relatório original em inglês (recolhível)</label>
+        <div class="ag-row">
+          <button class="ag-btn ag-btn-pri" id="btn-salvar" type="button">Salvar</button>
+          <button class="ag-btn ag-btn-sec" id="btn-testar" type="button">Testar conexão</button>
+        </div>
+        <p class="ag-hint" id="cfg-msg" role="status"></p>
+      </div>
+      <div class="ag-card">
+        <h2 class="ag-h">Sobre</h2>
+        <p class="ag-p">Agente de Retinografia 1.0 · modelos EyeFlow V800: RETFound ViT-L/16 (ensemble de 3) + MedGemma-27B com LoRA, decisão calibrada em VAL.</p>
+        <p class="ag-p">Desempenho no TEST público (159 imagens): acurácia balanceada 91%, sensibilidade 87%, especificidade 95%, AUC 97%.</p>
+        <button class="ag-btn ag-btn-sec" id="btn-limpar" type="button">Apagar histórico do aparelho</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="ag-nav ag-noprint" aria-label="Navegação">
+    <button type="button" data-v="v-nova" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nova análise</button>
+    <button type="button" data-v="v-hist"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Histórico</button>
+    <button type="button" data-v="v-ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Ajustes</button>
+  </nav>
+</div>
+<div class="ag-toast" id="toast" role="status" hidden></div>
+<script src="js/laudo.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
